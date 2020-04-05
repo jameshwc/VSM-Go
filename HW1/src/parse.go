@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/james-bowman/sparse"
+	"github.com/schollz/progressbar/v3"
 )
 
 type gram struct {
@@ -19,6 +20,7 @@ type gram struct {
 }
 
 func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gramID map[gram]int, termFrequency *sparse.DOK, IDF []float64) {
+	fmt.Fprintln(os.Stderr, "Parsing...")
 	vocabFile, err := os.Open(filepath.Join(modelDir, "vocab.all"))
 	if err != nil {
 		log.Fatal("read vocab.all")
@@ -63,7 +65,7 @@ func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gram
 			invertedScanner.Scan()
 		}
 	}
-
+	fmt.Fprintln(os.Stderr, "Parsing finished... Now creating tf-idf...")
 	/* Generate the term-frequency matrix */
 
 	fileNum := len(fileID)
@@ -73,21 +75,23 @@ func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gram
 	invertedScanner.Split(bufio.ScanLines)
 	docsLen := make([]int, fileNum)
 	docSum := 0
+	bar := progressbar.NewOptions(len(gramID), progressbar.OptionSetWriter(os.Stderr))
 	for i := 0; invertedScanner.Scan(); i++ {
 		n, _ := strconv.Atoi(strings.SplitN(invertedScanner.Text(), " ", 3)[2])
 		for j := 0; j < n; j++ {
+			invertedScanner.Scan()
 			splits := strings.SplitN(invertedScanner.Text(), " ", 2)
 			docID, _ := strconv.Atoi(splits[0])
 			freq, _ := strconv.ParseFloat(splits[1], 64)
 			// fmt.Println(docID, freq)
 			docsLen[docID] += int(freq)
 			docSum += int(freq)
-			val := (okapi + 1) * freq / (okapi + freq)
-			termFrequency.Set(docID, i, val)
-			invertedScanner.Scan()
+			// val := (okapi + 1) * freq / (okapi + freq)
+			termFrequency.Set(docID, i, freq)
 		}
 		IDF = append(IDF, math.Log(float64(fileNum+1)/float64(n+1))+1)
+		bar.Add(1)
 	}
-	fmt.Print(docsLen, len(docsLen), docSum)
+	fmt.Print(docsLen[0])
 	return
 }
