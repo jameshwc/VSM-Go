@@ -8,5 +8,5 @@ require (
 	github.com/james-bowman/sparse v0.0.0-20200204164517-b588421ac5da
 	github.com/mkouhei/gosh v0.2.3 // indirect
 	github.com/schollz/progressbar/v3 v3.0.2
-	gonum.org/v1/gonum v0.7.0 // indirect
+	gonum.org/v1/gonum v0.7.0
 )
