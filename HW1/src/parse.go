@@ -19,7 +19,16 @@ type gram struct {
 	vocab1, vocab2 int
 }
 
-func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gramID map[gram]int, termFrequency *sparse.DOK, IDF []float64) {
+type data struct {
+	vocabID, fileID map[string]int
+	gramID          map[gram]int
+	termFrequency   *sparse.DOK
+	IDF             []float64
+	docsLen         []int
+	docSum          int
+}
+
+func parse(modelDir string, okapi float64) data {
 	fmt.Fprintln(os.Stderr, "Parsing...")
 	vocabFile, err := os.Open(filepath.Join(modelDir, "vocab.all"))
 	if err != nil {
@@ -36,9 +45,9 @@ func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gram
 		log.Fatal("read inverted-file")
 	}
 	defer invertedFile.Close()
-	vocabID = make(map[string]int)
-	fileID = make(map[string]int)
-	gramID = make(map[gram]int)
+	vocabID := make(map[string]int)
+	fileID := make(map[string]int)
+	gramID := make(map[gram]int)
 	vocabScanner := bufio.NewScanner(vocabFile)
 	vocabScanner.Split(bufio.ScanLines)
 	for i := 0; vocabScanner.Scan(); i++ {
@@ -67,9 +76,9 @@ func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gram
 	}
 	fmt.Fprintln(os.Stderr, "Parsing finished... Now creating tf-idf...")
 	/* Generate the term-frequency matrix */
-
 	fileNum := len(fileID)
-	termFrequency = sparse.NewDOK(fileNum, len(gramID))
+	termFrequency := sparse.NewDOK(fileNum, len(gramID))
+	var IDF []float64
 	invertedFile.Seek(0, io.SeekStart)
 	invertedScanner = bufio.NewScanner(invertedFile)
 	invertedScanner.Split(bufio.ScanLines)
@@ -86,12 +95,12 @@ func parse(modelDir string, okapi float64) (vocabID, fileID map[string]int, gram
 			// fmt.Println(docID, freq)
 			docsLen[docID] += int(freq)
 			docSum += int(freq)
-			// val := (okapi + 1) * freq / (okapi + freq)
-			termFrequency.Set(docID, i, freq)
+			val := (okapi + 1) * freq / (okapi + freq)
+			termFrequency.Set(docID, i, val)
 		}
 		IDF = append(IDF, math.Log(float64(fileNum+1)/float64(n+1))+1)
 		bar.Add(1)
 	}
-	fmt.Print(docsLen[0])
-	return
+	dat := data{vocabID: vocabID, fileID: fileID, gramID: gramID, IDF: IDF, docSum: docSum, docsLen: docsLen, termFrequency: termFrequency}
+	return dat
 }

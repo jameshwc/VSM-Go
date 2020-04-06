@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 )
 
 func main() {
@@ -13,6 +14,7 @@ func main() {
 	flag.StringVar(&modelDir, "m", "model/", "The input model directory, which includes three files:\n\tmodel-dir/vocab.all\n\tmodel-dir/file-list\n\tmodel-dir/inverted-index")
 	flag.StringVar(&NTCIRdir, "d", "CIRB010/", "The directory of NTCIR documents, which is the path name of CIRB010 directory.")
 	flag.Parse()
-	/*vocabID, fileID, gramID, termFrequency, IDF := */ parse(modelDir, 1.5)
+	dat := parse(modelDir, 1.5)
+	fmt.Println(dat.docSum, len(dat.fileID))
 
 }
