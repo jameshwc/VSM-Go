@@ -31,6 +31,8 @@ func parse(modelDir string, okapi float64, normB float64) data {
 		log.Fatal("read inverted-file")
 	}
 	defer invertedFile.Close()
+	var ID2fileName []string
+	var IDF []float64
 	vocabID := make(map[rune]int)
 	fileID := make(map[string]int)
 	gramID := make(map[gram]int)
@@ -42,9 +44,10 @@ func parse(modelDir string, okapi float64, normB float64) data {
 	fileScanner := bufio.NewScanner(fileListFile)
 	fileScanner.Split(bufio.ScanLines)
 	for i := 0; fileScanner.Scan(); i++ {
-		fileID[fileScanner.Text()] = i
+		fileName := fileScanner.Text()
+		ID2fileName = append(ID2fileName, fileName)
+		fileID[fileName] = i
 	}
-	var IDF []float64
 	fileNum := len(fileID)
 	docsLen := make([]int, fileNum)
 	docSum := 0
@@ -75,7 +78,9 @@ func parse(modelDir string, okapi float64, normB float64) data {
 	gramNum := len(gramID)
 	avgLen := float64(docSum) / float64(fileNum)
 	fmt.Fprintln(os.Stderr, "Parsing finished... Now creating tf-idf...")
+
 	/* Generate the term-frequency matrix */
+
 	termFrequency := NewSparse(fileNum, gramNum, matrixSize)
 	fmt.Println(termFrequency.r, termFrequency.c)
 	invertedFile.Seek(0, io.SeekStart)
@@ -98,6 +103,6 @@ func parse(modelDir string, okapi float64, normB float64) data {
 		bar.Add(1)
 	}
 	termFrequency.L2Norm()
-	dat := data{vocabID: vocabID, fileID: fileID, gramID: gramID, IDF: IDF, docSum: docSum, docsLen: docsLen, termFrequency: termFrequency}
+	dat := data{vocabID: vocabID, fileID: fileID, ID2fileName: ID2fileName, gramID: gramID, IDF: IDF, docSum: docSum, docsLen: docsLen, termFrequency: termFrequency}
 	return dat
 }

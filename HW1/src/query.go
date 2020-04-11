@@ -2,9 +2,13 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 type query struct {
@@ -18,6 +22,7 @@ type query struct {
 
 type queries struct {
 	Q               []query `xml:"topic"`
+	num             int
 	titleWeight     float64
 	questionWeight  float64
 	conceptWeight   float64
@@ -25,6 +30,7 @@ type queries struct {
 }
 
 func parseQuery(queryFilePath string, gramNum int, titleWeight, questionWeight, conceptWeight, narrativeWeight float64) queries {
+	fmt.Fprintln(os.Stderr, "Parsing queries...")
 	queryFile, err := ioutil.ReadFile(queryFilePath)
 	if err != nil {
 		log.Fatal("read query file")
@@ -60,28 +66,32 @@ func parseQuery(queryFilePath string, gramNum int, titleWeight, questionWeight, 
 	q.conceptWeight = conceptWeight
 	q.narrativeWeight = narrativeWeight
 	q.questionWeight = questionWeight
+	q.num = len(q.Q)
+	fmt.Fprintln(os.Stderr, "Parsing queries finished... Now calculate the weight of queries...")
 	return q
 }
 
 func (q *queries) calcWeight(gramID map[gram]int, vocabID map[rune]int) {
+	bar := progressbar.NewOptions(q.num, progressbar.OptionSetWriter(os.Stderr))
 	for i := range q.Q {
-		var oldChar rune
+		var prevChar rune
 		iterString := func(target string, w float64) {
 			for idx, char := range target {
 				if v, ok := gramID[gram{vocabID[char], -1}]; ok {
 					q.Q[i].Weight[v] += w
 				}
 				if idx != 0 {
-					if v, ok := gramID[gram{vocabID[oldChar], vocabID[char]}]; ok {
+					if v, ok := gramID[gram{vocabID[prevChar], vocabID[char]}]; ok {
 						q.Q[i].Weight[v] += w
 					}
 				}
-				oldChar = char
+				prevChar = char
 			}
 		}
 		iterString(q.Q[i].Title, q.titleWeight)
 		iterString(q.Q[i].Concepts, q.conceptWeight)
 		iterString(q.Q[i].Narrative, q.narrativeWeight)
 		iterString(q.Q[i].Question, q.questionWeight)
+		bar.Add(1)
 	}
 }

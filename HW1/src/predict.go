@@ -1,0 +1,64 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"sort"
+
+	"github.com/schollz/progressbar/v3"
+)
+
+type sim struct {
+	idx int
+	dat float64
+}
+
+type sims []sim
+
+type predict struct {
+	rank []string
+	sims sims
+}
+
+type predicts []predict
+
+func (s sims) Len() int           { return len(s) }
+func (s sims) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s sims) Less(i, j int) bool { return s[i].dat > s[j].dat }
+
+func (p *predict) sort(ID2fileName []string) {
+	for i := range p.sims {
+		p.sims[i].idx = i
+	}
+	sort.Sort(p.sims)
+	n := len(p.rank)
+	for i := 0; i < n; i++ {
+		p.rank[i] = ID2fileName[p.sims[i].idx]
+	}
+}
+
+func newPredicts(queryNum, maxRetrieNum, fileNum int) predicts {
+	p := make([]predict, queryNum)
+	for i := range p {
+		p[i].rank = make([]string, maxRetrieNum)
+		p[i].sims = make([]sim, fileNum)
+	}
+	return p
+}
+func (p predicts) predict(docWeight *Sparse, queries []query, ID2fileName []string) {
+	docNum := len(ID2fileName)
+	fmt.Fprintln(os.Stderr, "\nNow calc the final result...\n")
+	bar := progressbar.NewOptions(len(queries), progressbar.OptionSetWriter(os.Stderr))
+	for q := range queries {
+		for gid := range queries[q].Weight {
+			if queries[q].Weight[gid] != 0.0 {
+				for docid := 0; docid < docNum; docid++ {
+					p[q].sims[docid].dat += queries[q].Weight[gid] * docWeight.Get(docid, gid)
+				}
+			}
+		}
+		p[q].sort(ID2fileName)
+		bar.Add(1)
+	}
+	fmt.Fprintln(os.Stderr, "\nFinish calculating!\n")
+}
