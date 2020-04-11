@@ -44,7 +44,7 @@ func parse(modelDir string, okapi float64, normB float64) data {
 	fileScanner := bufio.NewScanner(fileListFile)
 	fileScanner.Split(bufio.ScanLines)
 	for i := 0; fileScanner.Scan(); i++ {
-		fileName := fileScanner.Text()
+		fileName := filepath.Base(strings.ToLower(fileScanner.Text()))
 		ID2fileName = append(ID2fileName, fileName)
 		fileID[fileName] = i
 	}

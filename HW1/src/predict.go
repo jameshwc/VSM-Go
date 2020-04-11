@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -45,6 +47,7 @@ func newPredicts(queryNum, maxRetrieNum, fileNum int) predicts {
 	}
 	return p
 }
+
 func (p predicts) predict(docWeight *Sparse, queries []query, ID2fileName []string) {
 	docNum := len(ID2fileName)
 	fmt.Fprintln(os.Stderr, "\nNow calc the final result...\n")
@@ -61,4 +64,17 @@ func (p predicts) predict(docWeight *Sparse, queries []query, ID2fileName []stri
 		bar.Add(1)
 	}
 	fmt.Fprintln(os.Stderr, "\nFinish calculating!\n")
+}
+
+func (p predicts) output(CSVpath string, queryNum int) {
+	csvfile, err := os.Create(CSVpath)
+	if err != nil {
+		log.Fatal("Couldn't create the csv file", err)
+	}
+	defer csvfile.Close()
+	csvfile.WriteString("query_id,retrieved_docs\n")
+	for i := range p {
+		str := fmt.Sprintf("%.3d,%s\n", i+11, strings.Join(p[i].rank, " "))
+		csvfile.WriteString(str)
+	}
 }
