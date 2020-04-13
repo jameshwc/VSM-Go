@@ -78,11 +78,11 @@ func (q *queries) calcWeight(gramID map[gram]int, vocabID map[rune]int) {
 		iterString := func(target string, w float64) {
 			for idx, char := range target {
 				if v, ok := gramID[gram{vocabID[char], -1}]; ok {
-					q.Q[i].Weight[v] += w
+					q.Q[i].Weight[v] += w * singleWordWeight
 				}
 				if idx != 0 {
 					if v, ok := gramID[gram{vocabID[prevChar], vocabID[char]}]; ok {
-						q.Q[i].Weight[v] += w
+						q.Q[i].Weight[v] += w * doubleWordWeight
 					}
 				}
 				prevChar = char

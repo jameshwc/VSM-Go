@@ -10,23 +10,21 @@ type gram struct {
 
 type data struct {
 	vocabID       map[rune]int
-	fileID        map[string]int
 	gramID        map[gram]int
 	ID2fileName   []string
 	termFrequency *Sparse
-	IDF           []float64
-	docsLen       []int
-	docSum        int
 }
 
 const (
-	okapi           = 1.5
-	normB           = 0.5
-	titleWeight     = 5
-	questionWeight  = 4
-	conceptWeight   = 15
-	narrativeWeight = 2
-	maxRetrieveNum  = 60
+	okapi            = 1.5
+	normB            = 0.5
+	titleWeight      = 5
+	questionWeight   = 4
+	conceptWeight    = 15
+	narrativeWeight  = 2
+	maxRetrieveNum   = 100
+	singleWordWeight = .1
+	doubleWordWeight = 2
 )
 
 func main() {
@@ -41,7 +39,7 @@ func main() {
 	dat := parse(modelDir, okapi, normB)
 	q := parseQuery(queryFilePath, len(dat.gramID), titleWeight, questionWeight, conceptWeight, narrativeWeight)
 	q.calcWeight(dat.gramID, dat.vocabID)
-	result := newPredicts(q.num, maxRetrieveNum, len(dat.fileID))
+	result := newPredicts(q.num, maxRetrieveNum, len(dat.ID2fileName))
 	result.predict(dat.termFrequency, q.Q, dat.ID2fileName)
 	result.output(rankListPath, q.num)
 }
