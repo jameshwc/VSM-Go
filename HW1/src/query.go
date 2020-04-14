@@ -21,15 +21,11 @@ type query struct {
 }
 
 type queries struct {
-	Q               []query `xml:"topic"`
-	num             int
-	titleWeight     float64
-	questionWeight  float64
-	conceptWeight   float64
-	narrativeWeight float64
+	Q   []query `xml:"topic"`
+	num int
 }
 
-func parseQuery(queryFilePath string, gramNum int, titleWeight, questionWeight, conceptWeight, narrativeWeight float64) queries {
+func parseQuery(queryFilePath string, gramNum int) queries {
 	fmt.Fprintln(os.Stderr, "Parsing queries...")
 	queryFile, err := ioutil.ReadFile(queryFilePath)
 	if err != nil {
@@ -62,10 +58,6 @@ func parseQuery(queryFilePath string, gramNum int, titleWeight, questionWeight, 
 		}
 		q.Q[i].Weight = make([]float64, gramNum)
 	}
-	q.titleWeight = titleWeight
-	q.conceptWeight = conceptWeight
-	q.narrativeWeight = narrativeWeight
-	q.questionWeight = questionWeight
 	q.num = len(q.Q)
 	fmt.Fprintln(os.Stderr, "Parsing queries finished... Now calculate the weight of queries...")
 	return q
@@ -88,10 +80,10 @@ func (q *queries) calcWeight(gramID map[gram]int, vocabID map[rune]int) {
 				prevChar = char
 			}
 		}
-		iterString(q.Q[i].Title, q.titleWeight)
-		iterString(q.Q[i].Concepts, q.conceptWeight)
-		iterString(q.Q[i].Narrative, q.narrativeWeight)
-		iterString(q.Q[i].Question, q.questionWeight)
+		iterString(q.Q[i].Title, titleWeight)
+		iterString(q.Q[i].Concepts, conceptWeight)
+		iterString(q.Q[i].Narrative, narrativeWeight)
+		iterString(q.Q[i].Question, questionWeight)
 		bar.Add(1)
 	}
 }

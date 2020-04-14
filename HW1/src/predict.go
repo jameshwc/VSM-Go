@@ -66,6 +66,34 @@ func (p predicts) predict(docWeight *Sparse, queries []query, ID2fileName []stri
 	fmt.Fprintln(os.Stderr, "\nFinish calculating!\n")
 }
 
+func (p predicts) rocchio(queries []query, docWeight *Sparse) {
+	sumTopNdoc := func(p predict, gid int) float64 {
+		s := 0.0
+		for i := 0; i < topNumRel; i++ {
+			s += docWeight.Get(p.sims[i].idx, gid)
+		}
+		return s
+	}
+	sumLastNdoc := func(p predict, gid int) float64 {
+		s := 0.0
+		for i := 0; i < lastNumRel; i++ {
+			s += docWeight.Get(p.sims[maxRetrieveNum-1-i].idx, gid)
+		}
+		return s
+	}
+	for q := range queries {
+		for gid := range queries[q].Weight {
+			if queries[q].Weight[gid] != 0.0 {
+				queries[q].Weight[gid] = alpha*queries[q].Weight[gid] + beta/topNumRel*sumTopNdoc(p[q], gid) - c*sumLastNdoc(p[q], gid)
+			}
+		}
+	}
+	for predict := range p {
+		for s := range p[predict].sims {
+			p[predict].sims[s].dat = 0.0
+		}
+	}
+}
 func (p predicts) output(CSVpath string, queryNum int) {
 	csvfile, err := os.Create(CSVpath)
 	if err != nil {

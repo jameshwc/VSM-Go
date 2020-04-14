@@ -103,7 +103,7 @@ func genTermFrequency(invertFileName string, docsLen []int, avgLen float64, IDF 
 	return termFrequency
 }
 
-func parse(modelDir string, okapi float64, normB float64) data {
+func parse(modelDir string) data {
 	fmt.Fprintln(os.Stderr, "Parsing...")
 	vocabID := parseVocab(filepath.Join(modelDir, "vocab.all"))
 	ID2fileName := parseFileList(filepath.Join(modelDir, "file-list"))

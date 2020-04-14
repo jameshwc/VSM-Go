@@ -20,11 +20,17 @@ const (
 	normB            = 0.5
 	titleWeight      = 5
 	questionWeight   = 4
-	conceptWeight    = 15
+	conceptWeight    = 20
 	narrativeWeight  = 2
 	maxRetrieveNum   = 100
 	singleWordWeight = .1
 	doubleWordWeight = 2
+	/* Rocchio Parameter */
+	topNumRel  = 5
+	lastNumRel = 20
+	alpha      = 1
+	beta       = .8
+	c          = .1
 )
 
 func main() {
@@ -36,10 +42,12 @@ func main() {
 	flag.StringVar(&modelDir, "m", "model/", "The input model directory, which includes three files:\n\tmodel-dir/vocab.all\n\tmodel-dir/file-list\n\tmodel-dir/inverted-index")
 	flag.StringVar(&NTCIRdir, "d", "CIRB010/", "The directory of NTCIR documents, which is the path name of CIRB010 directory.")
 	flag.Parse()
-	dat := parse(modelDir, okapi, normB)
-	q := parseQuery(queryFilePath, len(dat.gramID), titleWeight, questionWeight, conceptWeight, narrativeWeight)
+	dat := parse(modelDir)
+	q := parseQuery(queryFilePath, len(dat.gramID))
 	q.calcWeight(dat.gramID, dat.vocabID)
 	result := newPredicts(q.num, maxRetrieveNum, len(dat.ID2fileName))
+	result.predict(dat.termFrequency, q.Q, dat.ID2fileName)
+	result.rocchio(q.Q, dat.termFrequency)
 	result.predict(dat.termFrequency, q.Q, dat.ID2fileName)
 	result.output(rankListPath, q.num)
 }
